@@ -1,0 +1,54 @@
+function [D1_min, D2_min, D3_min] = matrixMinimization_3D(mat)
+    % Initialize variables
+    size_mat = size(mat);
+    size_dim = size_mat(1);
+    disp(size_dim)
+    currentMin = flintmax;
+    D1 = 1;
+    D2 = 1;
+    D3 = 1;
+    minUpdated = true;
+    searchDirection = 1; % 1 for D1 search, 2 for D2umn search
+
+    % Loop until no smaller value is found
+    while minUpdated
+        minUpdated = false;
+        switch searchDirection == 1
+            % Search along D1
+            for d_1 = 1:size_dim
+                if mat(d_1, D2, D3) < currentMin
+                    currentMin = mat(d_1, D2, D3);
+                    D1 = d_1;
+                    minUpdated = true;
+                end
+            end
+            searchDirection = 2; % Switch to D2 search
+        elseif searchDirection == 2
+            % Search along D2
+            for d_2 = 1:size_dim
+                if mat(D1, d_2, D3) < currentMin
+                    currentMin = mat(D1, d_2, D3);
+                    D2 = d_2;
+                    minUpdated = true;
+                end
+            end
+            searchDirection = 3; % Switch to D3 search
+        elseif searchDirection == 3
+        % Search along D3
+            for d_3 = 1:size_dim
+                if mat(D1, D2, d_3) < currentMin
+                    currentMin = mat(D1, D2, d_3);
+                    D3 = d_3;
+                    minUpdated = true;
+                end
+            end
+            searchDirection = 1; % Switch to D1 search            
+        end
+    end
+
+    % Return the coordinates of the global minimum
+    D1_min = D1;
+    D2_min = D2;
+    D3_min = D3;
+end
+
