@@ -15,7 +15,7 @@ function[tau_final, u_min_final, fbl_final, T0_final] = Copy_of_part5(file_path,
     flux = flux/f_norm;
     sigma_flux = sigma_flux/(f_norm);
     
-    num_measurements = 20;
+    num_measurements = 1000;
     
    % Defining the spectrum of u_min's values
     u_min_lower_limit = u_min * 0.5;
@@ -34,48 +34,6 @@ function[tau_final, u_min_final, fbl_final, T0_final] = Copy_of_part5(file_path,
     fbl_upper_limit = fbl * 1.1;
     delta_fbl = (fbl_upper_limit - fbl_lower_limit) / num_measurements;
     
-    % The dimensions of chi_mat are the number of measurements.
-    chi_mat = zeros(num_measurements, num_measurements, num_measurements, num_measurements);
-    flux_size = length(flux);
-    % Calculating chi squared with different variations from tau and u_min
-    % spectrum.
-    for l = 1:num_measurements
-        for i = 1:num_measurements
-            for j = 1:num_measurements  
-                for n = 1:num_measurements
-                    for k = 1:flux_size
-                        t = (time(k)-(T0_lower_limit + delta_T0 * n))/(tau_lower_limit + delta_tau * i);
-                        u = ((u_min_lower_limit + delta_u_min * j) ^ 2 + t ^ 2) ^ (1/2);
-                        mu = (2 + u ^ 2) / (u * (4 + u ^ 2) ^ (1/2));
-                        fbl = fbl_lower_limit + delta_fbl * l;
-                        new_mu = 1 - fbl + (fbl * mu);
-                        chi_mat(i, j, l, n) = chi_mat(i, j, l, n) + (((flux(k) - new_mu) / sigma_flux(k)) ^ 2);
-                    end
-                end
-            end
-        end
-    end
-
-    % Test - Compare with MATLAB built-in functions
-    [minValue, linearIndex] = min(chi_mat(:)); % Find the minimum value and its linear index
-    [i, j, l, n] = ind2sub(size(chi_mat), linearIndex); % Convert linear index to row and column indices
-    disp(j);
-    disp(i);
-    disp(l);
-    disp(n);
-    
-    % Finding the minimazation of the matrix.
-    [j, i, l, n] = matrixMinimization_4D(chi_mat);  
-    disp(j);
-    disp(i);
-    disp(l);
-    disp(n);
-
-    tau_final = tau_lower_limit + i * delta_tau;
-    u_min_final = u_min_lower_limit + j * delta_u_min;
-    fbl_final = fbl_lower_limit + l * delta_fbl;
-    T0_final = T0_lower_limit + n * delta_T0;
-
     % Defining the spectrum of u_min's values
     u_min_vec = linspace(u_min_lower_limit, u_min_upper_limit, num_measurements);
     
@@ -87,62 +45,172 @@ function[tau_final, u_min_final, fbl_final, T0_final] = Copy_of_part5(file_path,
     
     % Defining the spectrum of fbl's values
     fbl_vec = linspace(fbl_lower_limit, fbl_upper_limit, num_measurements);
-
-    delta_chi = chi_mat - chi_mat(j, i, l, n);
     
-    delta_chi_tau_u_min = squeeze(delta_chi(:, :, l, n));
+    % The dimensions of chi_mat are the number of measurements.
+    chi_mat = zeros(num_measurements, num_measurements);
+     
+    % 2d matrix of u_min and tau
+    % Precompute delta_time
+    delta_time = time - T0;  % size (574,1)
+    % Loop over k to accumulate chi-squared values
+    for k = progress(1:length(time))
+        % Compute t for all tau_values
+        t = delta_time(k) ./ tau_vec;  % size (1, num_measurements)        
+        % Create meshgrid for u_min_values and t
+        [u_min_grid, t_grid] = meshgrid(u_min_vec, t);
+        % Compute u
+        u = sqrt(u_min_grid.^2 + t_grid.^2);  % size (num_measurements, num_measurements)
+        % Compute mu
+        mu = (2 + u.^2) ./ (u .* sqrt(4 + u.^2));
+        new_mu = 1 - fbl + (fbl * mu);
+        % Compute residuals
+        residual = ((flux(k) - new_mu) / sigma_flux(k)).^2;
+        % Accumulate chi-squared values
+        chi_mat = chi_mat + residual;
+    end
+
+    [x, y] = matrixMinimization_2D(chi_mat);
+    delta_chi_tau_u_min = chi_mat - chi_mat(x, y);
     figure;
-    % subplot(1, 6, 1);
+    % subplot(1, 3, 1);
     contour(u_min_vec, tau_vec, delta_chi_tau_u_min, [1 2.3 2.71 6.63],'ShowText', true)
     xlabel('u_{min} (unitless)')
     ylabel('\tau')
     title('Contour of u_{min} - \tau plane')
     
-    delta_chi_fbl_u_min = squeeze(delta_chi(i, :, :, n));
+    % 2d matrix of u_min and fbl
+    % Precompute delta_time
+    delta_time = time - T0;  % size (574,1)
+    % Loop over k to accumulate chi-squared values
+    for k = progress(1:length(time))
+        % Compute t for all tau_values
+        t = delta_time(k) / tau;  % size (1, num_measurements)
+        [u_min_grid, fbl_grid] = meshgrid(u_min_vec, fbl_vec);
+        % Compute u
+        u = sqrt(u_min_grid.^2 + t.^2);  % size (num_measurements, num_measurements)
+        % Compute mu
+        mu = (2 + u.^2) ./ (u .* sqrt(4 + u.^2));
+        new_mu = 1 - fbl_grid + (fbl_grid .* mu);
+        % Compute residuals
+        residual = ((flux(k) - new_mu) / sigma_flux(k)).^2;
+        % Accumulate chi-squared values
+        chi_mat = chi_mat + residual;
+    end
+
+    [x, y] = matrixMinimization_2D(chi_mat);
+    delta_chi_fbl_u_min = chi_mat - chi_mat(x, y);
     figure;
-    % subplot(1, 6, 2);
-    contour(fbl_vec, u_min_vec, delta_chi_fbl_u_min, [1 2.3 2.71 6.63] ,'ShowText', true)
-    xlabel('fbl (unitless)')
-    ylabel('u_{min}')
+    % subplot(1, 3, 1);
+    contour(u_min_vec, fbl_vec, delta_chi_fbl_u_min, [1 2.3 2.71 6.63],'ShowText', true)
+    xlabel('u_{min} (unitless)')
+    ylabel('fbl')
     title('Contour of u_{min} - fbl plane')
 
-    delta_chi_T0_u_min = squeeze(delta_chi(j, :, l, :));
-    figure;
-    % subplot(1, 6, 3);
-    contour(T0_vec, u_min_vec, delta_chi_T0_u_min, [1 2.3 2.71 6.63] ,'ShowText', true)
-    xlabel('T_0 (unitless)')
-    ylabel('u_{min}')
-    title('Contour of T_0 - u_{min} plane')
+    % 2d matrix of u_min and T0
+    % Loop over k to accumulate chi-squared values
+    for k = progress(1:length(time))
+        [u_min_grid, T0_grid] = meshgrid(u_min_vec, T0_vec);
+        delta_time = time(k) - T0_grid;  % size (574,1)
+        % Compute t for all tau_values
+        t = delta_time / tau;  % size (1, num_measurements)
+        % Compute u
+        u = sqrt(u_min_grid.^2 + t.^2);  % size (num_measurements, num_measurements)
+        % Compute mu
+        mu = (2 + u.^2) ./ (u .* sqrt(4 + u.^2));
+        new_mu = 1 - fbl + (fbl * mu);
+        % Compute residuals
+        residual = ((flux(k) - new_mu) / sigma_flux(k)).^2;
+        % Accumulate chi-squared values
+        chi_mat = chi_mat + residual;
+    end
 
-    delta_chi_tau_fbl = squeeze(delta_chi(:, i, :, n));
+    [x, y] = matrixMinimization_2D(chi_mat);
+    delta_chi_T0_u_min = chi_mat - chi_mat(x, y);
     figure;
-    % subplot(1, 6, 4);
-    contour(fbl_vec, tau_vec, delta_chi_tau_fbl, [1 2.3 2.71 6.63],'ShowText', true)
-    xlabel('fbl (unitless)')
-    ylabel('\tau')
-    title('Contour of fbl - \tau plane')
+    % subplot(1, 3, 1);
+    contour(u_min_vec, T0_vec, delta_chi_T0_u_min, [1 2.3 2.71 6.63],'ShowText', true)
+    xlabel('u_{min} (unitless)')
+    ylabel('T0')
+    title('Contour of u_{min} - T0 plane')
+    
+    % 2d matrix of T0 and tau
+    % Loop over k to accumulate chi-squared values
+    for k = progress(1:length(time))
+        [tau_grid, T0_grid] = meshgrid(tau_vec, T0_vec);
+        delta_time = time(k) - T0_grid;  % size (574,1)
+        % Compute t for all tau_values
+        t = delta_time ./ tau_grid;  % size (1, num_measurements)
+        % Compute u
+        u = sqrt(u_min^2 + t.^2);  % size (num_measurements, num_measurements)
+        % Compute mu
+        mu = (2 + u.^2) ./ (u .* sqrt(4 + u.^2));
+        new_mu = 1 - fbl + (fbl * mu);
+        % Compute residuals
+        residual = ((flux(k) - new_mu) / sigma_flux(k)).^2;
+        % Accumulate chi-squared values
+        chi_mat = chi_mat + residual;
+    end
 
-    delta_chi_tau_T0 = squeeze(delta_chi(:, i, l, :));
+    [x, y] = matrixMinimization_2D(chi_mat);
+    delta_chi_T0_tau = chi_mat - chi_mat(x, y);
     figure;
-    % subplot(1, 6, 5);
-    contour(T0_vec, tau_vec, delta_chi_tau_T0, [1 2.3 2.71 6.63],'ShowText', true)
-    xlabel('T_0 (unitless)')
-    ylabel('\tau')
-    title('Contour of T_0 - \tau plane')
+    % subplot(1, 3, 1);
+    contour(tau_vec, T0_vec, delta_chi_T0_tau, [1 2.3 2.71 6.63],'ShowText', true)
+    xlabel('\tau (unitless)')
+    ylabel('T0')
+    title('Contour of \tau - T0 plane')
 
-    delta_chi_fbl_T0 = squeeze(delta_chi(j, i, :, :));
+    % % 2d matrix of fbl and tau
+    % % Loop over k to accumulate chi-squared values
+    for k = progress(1:length(time))
+        [tau_grid, fbl_grid] = meshgrid(tau_vec, fbl_vec);
+        delta_time = time(k) - T0;  % size (574,1)
+        % Compute t for all tau_values
+        t = delta_time ./ tau_grid;  % size (1, num_measurements)
+        % Compute u
+        u = sqrt(u_min^2 + t.^2);  % size (num_measurements, num_measurements)
+        % Compute mu
+        mu = (2 + u.^2) ./ (u .* sqrt(4 + u.^2));
+        new_mu = 1 - fbl_grid + (fbl_grid .* mu);
+        % Compute residuals
+        residual = ((flux(k) - new_mu) / sigma_flux(k)).^2;
+        % Accumulate chi-squared values
+        chi_mat = chi_mat + residual;
+    end
+
+    [x, y] = matrixMinimization_2D(chi_mat);
+    delta_chi_fbl_tau = chi_mat - chi_mat(x, y);
     figure;
-    % subplot(1, 6, 6);
-    contour(T0_vec, fbl_vec, delta_chi_fbl_T0, [1 2.3 2.71 6.63],'ShowText', true)
-    xlabel('T_0 (unitless)')
+    % subplot(1, 3, 1);
+    contour(tau_vec, fbl_vec, delta_chi_fbl_tau, [1 2.3 2.71 6.63],'ShowText', true)
+    xlabel('\tau (unitless)')
     ylabel('fbl')
-    title('Contour of T_0 - fbl plane')
-    
+    title('Contour of \tau - fbl plane')
 
-    % The distance of the contour elipses from the origin is the delta of the answer.
-    % Calculate the projection of each contour from the origin.
-    % The origin is defined by the vaules returned from this function(minimum).
-    % tau_final\ fbl_final \ u_min_final 
+    % 2d matrix of fbl and T0
+    % Loop over k to accumulate chi-squared values
+    for k = progress(1:length(time))
+        [T0_grid, fbl_grid] = meshgrid(T0_vec, fbl_vec);
+        delta_time = time(k) - T0_grid;  % size (574,1)
+        % Compute t for all tau_values
+        t = delta_time / tau;  % size (1, num_measurements)
+        % Compute u
+        u = sqrt(u_min^2 + t.^2);  % size (num_measurements, num_measurements)
+        % Compute mu
+        mu = (2 + u.^2) ./ (u .* sqrt(4 + u.^2));
+        new_mu = 1 - fbl_grid + (fbl_grid .* mu);
+        % Compute residuals
+        residual = ((flux(k) - new_mu) / sigma_flux(k)).^2;
+        % Accumulate chi-squared values
+        chi_mat = chi_mat + residual;
+    end
     
-
+    [x, y] = matrixMinimization_2D(chi_mat);
+    delta_chi_fbl_T0 = chi_mat - chi_mat(x, y);
+    figure;
+    % subplot(1, 3, 1);
+    contour(T0_vec, fbl_vec, delta_chi_fbl_T0, [1 2.3 2.71 6.63],'ShowText', true)
+    xlabel('T0 (unitless)')
+    ylabel('fbl')
+    title('Contour of T0 - fbl plane')
 end

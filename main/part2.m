@@ -15,7 +15,7 @@ function[tau_final] = part2(file_path, T0, tau, u_min)
     flux = flux/f_norm;
     sigma_flux = sigma_flux/(f_norm);
     
-    num_measurements = 100;
+    num_measurements = 1000;
     
     % Defining the spectrum of u_min's values
     u_min_lower_limit = u_min*0.5;
@@ -42,10 +42,7 @@ function[tau_final] = part2(file_path, T0, tau, u_min)
     end
     
     % Finding the minimazation of the matrix.
-    [x, y] = matrixMinimization(chi_mat);
-    % % Test - Compare with MATLAB built-in functions
-    % [minValue, linearIndex] = min(chi_mat(:)); % Find the minimum value and its linear index
-    % [y, x] = ind2sub(size(chi_mat), linearIndex); % Convert linear index to row and column indices
+    [x, y] = matrixMinimization_2D(chi_mat);
     disp(x);
     disp(y);
     

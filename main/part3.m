@@ -8,7 +8,6 @@ function[tau_final, u_min_final, T0_final] = part3(file_path, T0, tau, u_min)
     err = data(:,3);
     % Converting magnitude to flux based on the derivative of eq.(1.14) with respect to m, when F0=1 and m0=0
     sigma_flux = -0.4*log(10).*err.*10.^(0.4*(-magnitude));
-    % T0 = T0;
     
     % Normalizing the flux values with respect to flux value without
     % microlensing.
@@ -16,7 +15,7 @@ function[tau_final, u_min_final, T0_final] = part3(file_path, T0, tau, u_min)
     flux = flux/f_norm;
     sigma_flux = sigma_flux/(f_norm);
     
-    num_measurements = 20;
+    num_measurements = 100;
     
     % Defining the spectrum of u_min's values
     u_min_lower_limit = u_min * 0.5;
@@ -53,9 +52,6 @@ function[tau_final, u_min_final, T0_final] = part3(file_path, T0, tau, u_min)
     end
     % Finding the minimazation of the matrix.
     [x, y, z] = matrixMinimization_3D(chi_mat);
-    % Test - Compare with MATLAB built-in functions
-    % [minValue, linearIndex] = min(chi_mat(:)); % Find the minimum value and its linear index
-    % [y, x, z] = ind2sub(size(chi_mat), linearIndex); % Convert linear index to row and column indices
     disp(x);
     disp(y);
     disp(z);

@@ -18,13 +18,17 @@ function[tau_final] = deltaTau(file_path, T0, tau, u_min)
     
     % Defining the spectrum of u_min's values
     u_min_lower_limit = u_min*0.5;
-    delta_u_min = (u_min*0.5)/(num_measurements/2);
-    u_min_values = u_min_lower_limit + delta_u_min * (1:num_measurements);
+    u_min_upper_limit = u_min * 1.5;
+    delta_u_min = (u_min_upper_limit - u_min_lower_limit) / num_measurements;
+    u_min_values = linspace(u_min_lower_limit, u_min_upper_limit, num_measurements);
+
     
     % Defining the spectrum of tau's values
     tau_lower_limit = tau*0.5;
-    delta_tau = (tau*0.5)/(num_measurements/2);
-    tau_values = tau_lower_limit + delta_tau * (1:num_measurements);
+    tau_upper_limit = tau * 1.5;
+    delta_tau=(tau_upper_limit - tau_lower_limit) / num_measurements;
+    tau_values = linspace(tau_lower_limit, tau_upper_limit, num_measurements);
+
     
     % Pre-allocate chi_mat
     chi_mat = zeros(num_measurements, num_measurements);
@@ -33,32 +37,23 @@ function[tau_final] = deltaTau(file_path, T0, tau, u_min)
     delta_time = time - T0;  % size (574,1)
     
     % Loop over k to accumulate chi-squared values
-    for k = 1:length(time)
+    for k = progress(1:length(time))
         % Compute t for all tau_values
         t = delta_time(k) ./ tau_values;  % size (1, num_measurements)
-    
         % Create meshgrid for u_min_values and t
         [u_min_grid, t_grid] = meshgrid(u_min_values, t);
-    
         % Compute u
         u = sqrt(u_min_grid.^2 + t_grid.^2);  % size (num_measurements, num_measurements)
-    
         % Compute mu
         mu = (2 + u.^2) ./ (u .* sqrt(4 + u.^2));
-    
         % Compute residuals
         residual = ((flux(k) - mu) / sigma_flux(k)).^2;
-    
         % Accumulate chi-squared values
         chi_mat = chi_mat + residual;
     end
     
     % Finding the minimization of the matrix.
-    [x, y] = matrixMinimization(chi_mat);
-    % Test - Compare with MATLAB built-in functions
-    % [minValue, linearIndex] = min(chi_mat(:)); % Find the minimum value and its linear index
-    % [y, x] = ind2sub(size(chi_mat), linearIndex); % Convert linear index to row and column indices
-
+    [x, y] = matrixMinimization_2D(chi_mat);
     disp(x);
     disp(y);
     

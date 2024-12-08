@@ -15,7 +15,7 @@ function[tau_final, u_min_final, fbl_final] = part4(file_path, T0, fbl, tau, u_m
     flux = flux/f_norm;
     sigma_flux = sigma_flux / (f_norm);
     
-    num_measurements = 1000;
+    num_measurements = 50;
     
     % Defining the spectrum of u_min's values
     u_min_lower_limit = u_min * 0.5;
@@ -26,8 +26,8 @@ function[tau_final, u_min_final, fbl_final] = part4(file_path, T0, fbl, tau, u_m
     tau_upper_limit = tau * 1.5;
     delta_tau = (tau_upper_limit - tau_lower_limit) / num_measurements;
     % Defining the spectrum of fbl's values
-    fbl_lower_limit = fbl * 0.9;
-    fbl_upper_limit = fbl * 1.1;
+    fbl_lower_limit = fbl * 0.85;
+    fbl_upper_limit = fbl * 1.15;
     delta_fbl = (fbl_upper_limit - fbl_lower_limit) / num_measurements;
     
     % The dimensions of chi_mat are the number of measurements.
@@ -35,7 +35,7 @@ function[tau_final, u_min_final, fbl_final] = part4(file_path, T0, fbl, tau, u_m
     flux_size = length(flux);
     % Calculating chi squared with different variations from tau and u_min
     % spectrum.
-    for l = 1:num_measurements
+    for l = progress(1:num_measurements)
         for i = 1:num_measurements
             for j = 1:num_measurements           
                 for k = 1:flux_size

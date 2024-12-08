@@ -1,4 +1,4 @@
-function[tau_final, u_min_final, fbl_final] = part5(file_path, T0, fbl, tau, u_min)
+function[tau_final, u_min_final, fbl_final, T0_final] = part5(file_path, T0, fbl, tau, u_min)
     % Hardcoded data per incident.
     data = load(file_path);
     time = data(:,1);
@@ -15,25 +15,29 @@ function[tau_final, u_min_final, fbl_final] = part5(file_path, T0, fbl, tau, u_m
     flux = flux/f_norm;
     sigma_flux = sigma_flux/(f_norm);
     
-    num_measurements = 10;
+    num_measurements = 100;
     
-    % Defining the spectrum of u_min's values
-    u_min_lower_limit = u_min*0.5;
-    delta_u_min = (u_min*0.5)/(num_measurements/2);
+   % Defining the spectrum of u_min's values
+    u_min_lower_limit = u_min * 0.5;
+    u_min_upper_limit = u_min * 1.5;
+    delta_u_min = (u_min_upper_limit - u_min_lower_limit) / num_measurements;
     % Defining the spectrum of tau's values
-    tau_lower_limit = tau*0.5;
-    delta_tau = (tau*0.5)/(num_measurements/2);
+    tau_lower_limit = tau * 0.5;
+    tau_upper_limit = tau * 1.5;
+    delta_tau = (tau_upper_limit - tau_lower_limit) / num_measurements;
     % Defining the spectrum of T0's values
-    T0_lower_limit = T0*0.5;
-    delta_T0 = (T0*0.5)/(num_measurements/2);
+    T0_lower_limit = T0 * 0.999999;
+    T0_upper_limit = T0 * 1.000001;
+    delta_T0 = (T0_upper_limit - T0_lower_limit) / num_measurements;
     % Defining the spectrum of fbl's values
-    fbl_lower_limit = fbl*0.5;
-    delta_fbl = (fbl*0.5)/(num_measurements/2);
-    
+    fbl_lower_limit = fbl * 0.9;
+    fbl_upper_limit = fbl * 1.1;
+    delta_fbl = (fbl_upper_limit - fbl_lower_limit) / num_measurements;
     
     % The dimensions of chi_mat are the number of measurements.
     chi_mat = zeros(num_measurements, num_measurements, num_measurements, num_measurements);
     flux_size = length(flux);
+    
     % Calculating chi squared with different variations from tau and u_min
     % spectrum.
     for l = 1:num_measurements
@@ -52,8 +56,7 @@ function[tau_final, u_min_final, fbl_final] = part5(file_path, T0, fbl, tau, u_m
             end
         end
     end
-    % Finding the minimazation of the matrix.
-    %[x, y] = matrixMinimization(chi_mat);
+
     % Test - Compare with MATLAB built-in functions
     [minValue, linearIndex] = min(chi_mat(:)); % Find the minimum value and its linear index
     [i, j, l, n] = ind2sub(size(chi_mat), linearIndex); % Convert linear index to row and column indices
@@ -62,30 +65,28 @@ function[tau_final, u_min_final, fbl_final] = part5(file_path, T0, fbl, tau, u_m
     disp(l);
     disp(n);
     
+    % Finding the minimazation of the matrix.
+    [j, i, l, n] = matrixMinimization_4D(chi_mat);  
+    disp(j);
+    disp(i);
+    disp(l);
+    disp(n);
+
     tau_final = tau_lower_limit + i * delta_tau;
     u_min_final = u_min_lower_limit + j * delta_u_min;
     fbl_final = fbl_lower_limit + l * delta_fbl;
     T0_final = T0_lower_limit + n * delta_T0;
 
-
     % Defining the spectrum of u_min's values
-    u_min_lower_limit = u_min * 0.5;
-    u_min_upper_limit = u_min * 1.5;
     u_min_vec = linspace(u_min_lower_limit, u_min_upper_limit, num_measurements);
     
     % Defining the spectrum of tau's values
-    tau_lower_limit = tau * 0.5;
-    tau_upper_limit = tau * 1.5;
     tau_vec = linspace(tau_lower_limit, tau_upper_limit, num_measurements);
 
     % Defining the spectrum of T0's values
-    T0_lower_limit = T0 * 0.8;
-    T0_upper_limit = T0 * 1.2;
     T0_vec = linspace(T0_lower_limit, T0_upper_limit, num_measurements);
     
     % Defining the spectrum of fbl's values
-    fbl_lower_limit = fbl * 0.8;
-    fbl_upper_limit = fbl * 1.2;
     fbl_vec = linspace(fbl_lower_limit, fbl_upper_limit, num_measurements);
 
     delta_chi = chi_mat - chi_mat(j, i, l, n);
