@@ -25,7 +25,7 @@ function[tau_final, u_min_final] = contourErrorGraph(file_path, T0, tau, u_min)
     % Defining the spectrum of tau's values
     tau_lower_limit = tau*0.5;
     tau_upper_limit = tau * 1.5;
-    delta_tau=(tau_upper_limit - tau_lower_limit) / num_measurements;
+    delta_tau = (tau_upper_limit - tau_lower_limit) / num_measurements;
     tau_values = tau_lower_limit + delta_tau * (1:num_measurements);
     
     % Pre-allocate chi_mat

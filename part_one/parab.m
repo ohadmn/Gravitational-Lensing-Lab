@@ -9,7 +9,7 @@ function [a,b,c] = parab(x,y,sigma)
     a_32 = sum(x.^1./sigma.^2);
     a_33 = sum(x.^0./sigma.^2);
 
-    mat = [a_11 a_12 a_13;
+    coeff_mat = [a_11 a_12 a_13;
            a_21 a_22 a_23;
            a_31 a_32 a_33];
 
@@ -19,7 +19,7 @@ function [a,b,c] = parab(x,y,sigma)
 
     RH_vec = [b_1, b_2, b_3];
 
-    parab = RH_vec/mat;
+    parab = RH_vec/coeff_mat;
     
     a = parab(1);
     b = parab(2);

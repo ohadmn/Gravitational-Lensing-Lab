@@ -1,4 +1,4 @@
-function[tau_final, u_min_final, T0_final] = vector_part3(file_path, T0, tau, u_min)
+function[tau_final, u_min_final, T0_final] = part3Vectorized(file_path, T0, tau, u_min)
     % Hardcoded data per incident.
     data = load(file_path);
     time = data(:,1);

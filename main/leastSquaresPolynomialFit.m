@@ -9,6 +9,8 @@ function [max_time, flux_max] = leastSquaresPolynomialFit(filePath)
     % Convert magnitude to flux
     flux = 1 * 10.^(0.4 * (-magnitude));
     sigma_flux = -0.4 * log(10) * err .* 10.^(0.4 * (-magnitude));
+    
+    errorbar(time, flux, sigma_flux, ".", 'MarkerSize', 10);
 
     % Normalize the flux values
     flux_norm_factor = (5 * 10^-9);
@@ -23,6 +25,8 @@ function [max_time, flux_max] = leastSquaresPolynomialFit(filePath)
     % Normalize time with respect to the first value
     time_norm_factor = time_sliced_values(1);
     time_sliced_values = time_sliced_values - time_norm_factor;
+    
+    errorbar(time - time_norm_factor, flux, sigma_flux, ".", 'MarkerSize', 10);
 
     % Calculate a, b, c using the parab function
     [a, b, c] = parab(time_sliced_values, flux_sliced_values, sigma_sliced_values);

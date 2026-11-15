@@ -1,5 +1,5 @@
 function[x, y] = matrix_minimization(mat)
-    min = flintmax;
+    min = mat(2, 2);
     column = 1;
     row = 1;
     mat_dimensions_vector = size(mat);

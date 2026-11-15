@@ -15,7 +15,7 @@ function[tau_final, u_min_final, fbl_final] = vector_part4(file_path, T0, fbl, t
     flux = flux/f_norm;
     sigma_flux = sigma_flux / (f_norm);
     
-    num_measurements = 600;
+    num_measurements = 100;
     
     % Defining the spectrum of u_min's values
     u_min_lower_limit = u_min * 0.5;
@@ -95,11 +95,5 @@ function[tau_final, u_min_final, fbl_final] = vector_part4(file_path, T0, fbl, t
     xlabel('fbl (unitless)')
     ylabel('\tau')
     title('Contour of fbl - \tau plane')
-
-    % The distance of the contour elipses from the origin is the delta of the answer.
-    % Calculate the projection of each contour from the origin.
-    % The origin is defined by the vaules returned from this function(minimum).
-    % tau_final\ fbl_final \ u_min_final 
-    
 
 end
