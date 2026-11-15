@@ -87,50 +87,6 @@ Requires MATLAB R2021a or newer (no toolboxes).
 | `tests/testMicrolensing.m` | unit tests |
 | `results/original/` | figures produced for the lab report with the original scripts |
 
-## What changed relative to the original scripts
-
-The first version of this code (still in the git history) had one script
-per lab part and per number of parameters. It was merged into one general
-toolbox, and these problems were fixed:
-
-- **One N-dimensional implementation** instead of copies for 2, 3 and 4
-  parameters (`chi2Grid`, `gridMinimum`, `coordinateDescentMin`,
-  `plotChi2Contours` work for any subset of parameters).
-- **No hard-coded events**: file paths (`~/Desktop/...`), the index window
-  `493:533` of the peak, per-event search ranges and catalogue starting
-  values are gone. Starting values are estimated from the data and the
-  grid re-centres and rescales itself around the minimum.
-- **Baseline normalisation** used the first data point (`flux(1)`), so one
-  noisy measurement rescaled the whole light curve. It is now the median
-  of all points far from the event.
-- **Swapped indices**: `chi_mat(y, x, z)` was used to read the minimum of
-  an array indexed `(x, y, z)`, so Δχ² was measured from the wrong
-  element; in the 4-parameter fit the indices of `tau`/`uMin` and of
-  `T0`/`fbl` were exchanged when converting back to parameter values.
-- **Grid values vs. axes**: best-fit values were computed as
-  `lower + index * delta` with `delta = range / N`, while the grid itself
-  was `linspace(lower, upper, N)` – a different spacing. Values are now
-  read from the grid vectors.
-- **χ² accumulated across panels**: the six 2-D slices of the 4-parameter
-  contour figure reused one matrix without resetting it.
-- **`T0` search range** was `T0 * (1 ± 1e-6)` (an accident of the size of
-  Julian dates) and the simplex start was `T0 * 0.99` (24 000 days away
-  from the event). `T0` is now handled relative to the peak in units of
-  `tau`.
-- **Coordinate-descent minimum** can stop in a local minimum; the global
-  minimum of the grid is used for the fit (the axis-by-axis routine is
-  kept, generalised to N dimensions).
-- **Uncertainties** are now computed (Δχ² = 1 on the profile χ², and from
-  the Hessian for the simplex fit) rather than only read off the plots.
-  Contours by default show the *profile* χ² (other parameters
-  re-optimised), which gives the correct joint confidence regions; the
-  old fixed-slice behaviour is available with `'Mode', 'slice'`.
-- **Speed and memory**: the model is linear in `fbl`, so the 4-D grid
-  costs the same as a 3-D one.
-- Negative flux errors (sign of the derivative), an unfinished function
-  (`findMaximum.m`), editor autosave files and duplicated copies were
-  removed.
-
 ## References
 
 - B. Paczyński, *Gravitational Microlensing in the Local Group*, ARA&A 34 (1996).
